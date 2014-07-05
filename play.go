@@ -16,7 +16,7 @@ func main() {
             ai.Dumb,
             ai.Dumb,
             ai.Dumb,
-            player.Stdio,
+            player.Stdio{},
         )
         err := g.Resolve()
         if err != nil {

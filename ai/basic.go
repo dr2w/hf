@@ -15,7 +15,10 @@ func first(s state.State, m action.Message) []int {
 
 // second implements Decider and returns the second available option.
 func second(s state.State, m action.Message) []int {
-    return []int{m.Options[1]}
+    if len(m.Options) > 1 {
+        return []int{m.Options[1]}
+    }
+    return first(s,m)
 }
 
 // last implements Decider and returns the last available option.

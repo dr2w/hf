@@ -1,10 +1,7 @@
 package player
 
 import (
-    "os"
-    "io/ioutil"
     "fmt"
-    "log"
     "strings"
     "strconv"
 
@@ -19,30 +16,44 @@ type Stdio struct {
 // Play prints the relevant State and Message Options to stdout and pulls the selection
 // from stdin.
 func (p Stdio) Play(s state.State, m action.Message) []int {
-    displayState(s)
+    displayState(s, m.Type)
     return solicitChoice(m)
 }
 
-// displayStatus prints the current game state to stdout in an informative format. 
-func displayState(s state.State) {
-    fmt.Println(s)
+// displayState prints the current game state to stdout in an informative format. 
+func displayState(s state.State, t action.Type) {
+    if t == action.Bid || t == action.Trump {
+        displayBidding(s)
+    }
+    displayPlays(s)
+}
+
+// displayBidding shows the current scores as well as the bids placed so far.
+func displayBidding(s state.State) {
+
+}
+
+// displayPlays shows the trump and bid as well as the current hand and current play.
+func displayPlays(s state.State) {
+
 }
 
 // solicitChoice prompts the user to select one or more of a set of options and returns
 // the selections.
 func solicitChoice(m action.Message) []int {
-    fmt.Print("%s %v: ", m.Type, m.Options)
-    bytes, err := ioutil.ReadAll(os.Stdin)
+    fmt.Printf("\n%s: ", m)
+    text := ""
+    _, err := fmt.Scanln(&text)
     if err != nil {
-        log.Fatalf("unable to read from stdin: %s", err)
+            fmt.Println("error when reading from stdin, please try again.")
+            return solicitChoice(m)
     }
-    response := string(bytes)
-    selections := strings.Split(response, ",")
+    selections := strings.Split(text, ",")
     result := make([]int, len(selections))
     for i, s := range selections {
         result[i], err = strconv.Atoi(s)
         if err != nil {
-            fmt.Println("can't interpret %q as a number:\n%s", result[i], err)
+            fmt.Printf("can't interpret %q as a number:\n%s\n", result[i], err)
             return solicitChoice(m)
         }
     }
