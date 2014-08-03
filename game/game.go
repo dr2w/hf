@@ -55,6 +55,9 @@ func (g *Game) Resolve() error {
         if err := g.Advance(); err != nil {
             return err
         }
+        for _, p := range g.Players {
+            p.Update(g.State, g.Message.Type)
+        }
         //log.Printf("Game Advanced to:\n%s", g)
     }
     return nil
@@ -68,11 +71,11 @@ func (g *Game) Advance() error {
         //log.Printf("Player %s chose %v", p, response)
         g.Message.Options = response
     }
-    if s, m, err := action.NextState(g.State, g.Message); err != nil {
+    s, m, err := action.NextState(g.State, g.Message)
+    if err != nil {
         return err
-    } else {
-        g.State, g.Message = s, m
     }
+    g.State, g.Message = s, m
     return nil
 }
 

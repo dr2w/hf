@@ -9,4 +9,5 @@ import (
 // Player defines the basic interface needed for an entity (human or AI) to play the game.
 type Player interface {
     Play(state state.State, message action.Message) []int
+    Update(state state.State, t action.Type) 
 }

@@ -27,3 +27,8 @@ func (p AIPlayer) Play(s state.State, m action.Message) []int {
     }
     return nil
 }
+
+// Update implements the player.Player interface.
+func (p AIPlayer) Update(s state.State, t action.Type) {
+    return
+}
