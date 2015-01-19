@@ -8,7 +8,7 @@ import (
 type Suit int
 
 func (s Suit) String() string {
-    return suitNames[s]
+	return suitNames[s]
 }
 
 const (
@@ -22,7 +22,7 @@ const (
 type Value int
 
 func (v Value) String() string {
-    return valueNames[v]
+	return valueNames[v]
 }
 
 const (
@@ -130,6 +130,32 @@ func (s Set) TrumpCards(trump Suit) (t Set) {
 		}
 	}
 	return t
+}
+
+// Contains returns true iff this set contains the given card.
+func (s Set) Contains(c1 Card) bool {
+	for _, c2 := range s {
+		if c1.Suit == c2.Suit && c1.Value == c2.Value {
+			return true
+		}
+	}
+	return false
+}
+
+// AsTrump returns an identical Set with the Joker and
+// corresponding five card converted to trump suit and value.
+func (s Set) AsTrump(trump Suit) (at Set) {
+	for _, c := range s {
+		if c.Value == Five && c.Suit == SameColorSuit(trump) {
+			c.Suit = trump
+			c.Value = OffFive
+		}
+		if c.Value == Joker {
+			c.Suit = trump
+		}
+		at = append(at, c)
+	}
+	return at
 }
 
 // SameColorSuit takes a suit and returns the other suit of the same color.

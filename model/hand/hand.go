@@ -22,7 +22,7 @@ func (h *Hand) String() string {
 
 // Length returns the number of cards in the Hand.
 func (h *Hand) Length() int {
-    return len(*h)
+	return len(*h)
 }
 
 // Add adds the given Card to this Hand.
