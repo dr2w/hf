@@ -165,8 +165,8 @@ var fromBiddersTests = []struct {
 
 func TestFromBidders(t *testing.T) {
 	for _, test := range fromBiddersTests {
-		f := FromBidders(test.forSuit, test.isSix)
-		if got := f(test.state, test.message); got[0] != test.want[0] {
+		f := fromBidders(test.forSuit, test.isSix)
+		if got, _ := f(test.state, test.message); got[0] != test.want[0] {
 			t.Errorf("%s: want %s, got %s", test.name, test.want[0], got[0])
 		}
 	}

@@ -7,10 +7,36 @@ import (
 	"dr2w.com/hf/model/state"
 )
 
-type ForSuit func(cards card.Set) (min, max bid.Bid)
-type IsSix func(cards card.Set) bool
+type forSuit func(cards card.Set) (min, max bid.Bid)
+type isSix func(cards card.Set) bool
 
-// FromBidders takes in a ForSuit and an IsSix
+type bidder func(s state.State, m action.Message) ([]int, card.Suit)
+type decider func(s state.State, m action.Message) []int
+
+var (
+	DRWValue = value(fromBidders(drwSuitBid, drwSixBid))
+	DRWSuit  = suit(fromBidders(drwSuitBid, drwSixBid))
+)
+
+// Value convers a bidder into a decider that returns the
+// value of the bid (as opposed to the suit)
+func value(f bidder) decider {
+	return func(s state.State, m action.Message) []int {
+		v, _ := f(s, m)
+		return v
+	}
+}
+
+// Suit convers a bidder into a decider that returns the
+// suit of the bid (as opposed to the value)
+func suit(f bidder) decider {
+	return func(s state.State, m action.Message) []int {
+		_, suit := f(s, m)
+		return []int{int(suit)}
+	}
+}
+
+// fromBidders takes in a forSuit and an isSix
 // and returns a Decider that will bid based on these two
 // functions. If no max suit bid is >= 8, then it first
 // checks for a valid six bid. If there is not a valid
@@ -19,34 +45,37 @@ type IsSix func(cards card.Set) bool
 // TODO(drw): consider adding in aggressiveness and
 // randomness as adjustments to min and max.
 // TODO(drw): deal with the no mans land between 10 and 14/28.
-func FromBidders(forSuit ForSuit, isSix IsSix) func(s state.State, m action.Message) []int {
-	return func(s state.State, m action.Message) []int {
+func fromBidders(forSuit forSuit, isSix isSix) func(s state.State, m action.Message) ([]int, card.Suit) {
+	return func(s state.State, m action.Message) ([]int, card.Suit) {
 		h := *s.Hands[m.Seat]
 		minSuit, maxSuit := bid.Pass, bid.Pass
+		bestSuit := card.NoSuit
 		for _, suit := range card.Suits {
 			suitCards := card.Set(h).AsTrump(suit).TrumpCards(suit)
 			min, max := forSuit(suitCards)
 			if max > maxSuit {
 				minSuit = min
 				maxSuit = max
+				bestSuit = suit
 			}
 		}
 		_, currentBid := s.WinningBid()
 		if maxSuit < bid.B8 && currentBid == bid.Pass &&
 			isSix(card.Set(h)) {
-			return []int{int(bid.B6)}
+			// TODO(drw): handle the odd case where this wins.
+			return []int{int(bid.B6)}, bestSuit
 		}
 		for b := minSuit; b <= maxSuit; b++ {
 			if b > currentBid {
-				return []int{int(b)}
+				return []int{int(b)}, bestSuit
 			}
 		}
-		return []int{int(bid.Pass)}
+		return []int{int(bid.Pass)}, card.NoSuit
 	}
 }
 
 // drwSixBid implements a basic version of the logic drw uses
-// as an IsSix function.
+// as an isSix function.
 func drwSixBid(cards card.Set) bool {
 	suitCovered := func(s card.Suit) bool {
 		if cards.Contains(card.Card{card.Five, s}) ||
@@ -73,7 +102,7 @@ func drwSixBid(cards card.Set) bool {
 }
 
 // drwSuitBid implements a basic version of the per-suit
-// bidding logic drw uses as a ForSuit function:
+// bidding logic drw uses as a forSuit function:
 func drwSuitBid(cards card.Set) (min, max bid.Bid) {
 
 	// TODO(drw): Combine this and card_examples into
