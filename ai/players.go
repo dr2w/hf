@@ -12,6 +12,7 @@ var Dumb = AIPlayer{
 	},
 }
 
+// DRW plays using a set of rudimentary heuristics.
 var DRW = AIPlayer{
 	Name: "DRW",
 	Deciders: map[action.Type]Decider{
@@ -19,6 +20,6 @@ var DRW = AIPlayer{
 		action.Bid:     bidding.DRWValue,
 		action.Trump:   bidding.DRWSuit,
 		action.Discard: simpleDiscard,
-		action.Play:    first,
+		action.Play:    playing.DRWPlayer,
 	},
 }

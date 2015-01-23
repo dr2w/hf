@@ -22,10 +22,19 @@ func (t Trick) SuitLead() card.Suit {
 
 // Points returns the total number of points contained within the trick.
 func (t Trick) Points(trump card.Suit) (p int) {
-    for _, c := range t.Cards {
-        p += c.Points(trump)
-    }
-    return p
+	for _, c := range t.Cards {
+		p += c.Points(trump)
+	}
+	return p
+}
+
+// AsCardSet returns a card.Set containing all the cards in this trick.
+func (t Trick) AsCardSet() card.Set {
+	s := card.Set{}
+	for _, c := range t.Cards {
+		s = append(s, c)
+	}
+	return s
 }
 
 // Winner returns the winner of the specified Trick and the winning Card.
