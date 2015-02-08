@@ -17,7 +17,68 @@ var (
 	NoisyPlayer        = noisily(0.2, scorerFromDT(basicTree))
 )
 
-var basicTree = &tree{}
+// Basic Logic:
+//
+// If I'm leading:
+//   If I have the high card:
+//     Score based on value
+//   Else:
+//     Score based on inverse of points
+// Else If I'm not leading:
+//   If Offsuit:
+//     If I have a 5 and I am last:
+//       Score the 5!
+//     Else:
+//       If I am second to last and there's a 5 out I can cover:
+//         Score inverse of value for value above 5
+//       Else:
+//         Score inverse of value
+//   Else:
+//     If there's a 5:
+//       Score by value
+//     Else:
+//       If partner played the high card out:
+//	   If I have a 5:
+//	     Score 5s
+//         Else:
+//           Score by inverse value
+//       Else:
+//         If partner is winning:
+//           Score by inverse value
+//         Else:
+//           If partner hasn't played yet:
+//             If I have high card:
+//               Score high card
+//             Else:
+//               If I can take lead:
+//                 Score inverse value where I can take lead
+//               Else:
+//                 Score inverse points, inverse value
+//           Else:
+//             If there are more than 0 point showing:
+//               If I can take lead:
+//                 Score by value on lead
+//               Else:
+//                 Score by inverse value
+//             Else:
+//               If I am last:
+//                 Score by inverse value, points
+//               Else:
+//                 If I can take lead:
+//                   Score by value on lead
+//                 Else:
+//                   Score by inverse value
+var basicTree = &tree{
+	left: &tree{
+		
+	},
+	right: &tree{
+		
+	},
+	goLeft: func(l logic.Logic, c card.Card) bool {
+		return false	
+	},
+}
 
 type decider func(s state.State, m action.Message) []int
 
