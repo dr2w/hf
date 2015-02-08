@@ -97,9 +97,9 @@ func (t *tree) evaluate(l logic.Logic, c card.Card) float64 {
 		return t.score
 	}
 	if t.right == nil || t.goLeft(l, c) {
-		return t.right.evaluate(l, c)
+		return t.left.evaluate(l, c)
 	}
-	return t.left.evaluate(l, c)
+	return t.right.evaluate(l, c)
 }
 
 // scorerFromDT builds and returns a scorer from the given decision tree.
