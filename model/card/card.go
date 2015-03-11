@@ -95,6 +95,8 @@ func (c Card) Beats(o Card, trump Suit, lead Suit) bool {
 	return c.Suit == trump || c.Suit == lead && o.Suit != trump
 }
 
+const MaxPoints = 5
+
 // Points returns the number of scoring points this card is worth given the trump suit.
 func (c Card) Points(s Suit) int {
 	if c.Suit != s {
@@ -107,6 +109,20 @@ func (c Card) Points(s Suit) int {
 		return 5
 	}
 	return 0
+}
+
+const (
+	trumpValueMultiplier = 100
+	MaxTrumpValue        = trumpValueMultiplier * Ace
+)
+
+// Value returns the value of the card given the trump suit.
+// The range is arbitrary, only order is guaranteed.
+func (c Card) TrumpValue(s Suit) int {
+	if c.Suit != s {
+		return c.Value
+	}
+	return c.Value * trumpValueMultiplier
 }
 
 // Set describes a slice of cards with no particular ordering.

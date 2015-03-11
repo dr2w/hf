@@ -40,8 +40,7 @@ func (l Logic) TrumpOut() card.Set {
 }
 
 func (l Logic) MyTrump() card.Set {
-	myHand := *l.State.Hands[l.Perspective]
-	return card.Set(myHand).AsTrump(l.State.Trump).TrumpCards(l.State.Trump)
+	return l.MyHand().AsTrump(l.State.Trump).TrumpCards(l.State.Trump)
 }
 
 func (l Logic) TopTrumpOut() card.Card {
@@ -50,6 +49,36 @@ func (l Logic) TopTrumpOut() card.Card {
 
 func (l Logic) MyTopTrump() card.Card {
 	return max(l.MyTrump())
+}
+
+func (l Logic) IHaveHighCard() bool {
+	return l.IHave(l.TopTrumpOut())
+}
+
+func (l Logic) IAmLeading() bool {
+	return len(l.State.LastPlayed()) == 0
+}
+
+func (l Logic) OffsuitLead() bool {
+	return false
+}
+
+func (l Logic) MyHand() card.Set {
+	return card.Set(*l.State.Hands[l.Perspective])
+}
+
+func (l Logic) IHave(c card.Card) bool {
+	return l.MyHand().Contains(c)
+}
+
+func (l Logic) IHaveAFive() bool {
+	return l.IHave(card.Card{Suit: l.State.Trump, Value: card.Five}) ||
+		l.IHave(card.Card{Suit: l.State.Trump, Value: card.OffFive})
+}
+
+func (l Logic) IAmLast() bool {
+	// TODO(drw): Add support for players throwing in.
+	return len(l.State.LastPlayed()) == 3
 }
 
 func max(s card.Set) card.Card {

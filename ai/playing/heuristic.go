@@ -17,66 +17,200 @@ var (
 	NoisyPlayer        = noisily(0.2, scorerFromDT(basicTree))
 )
 
+const scoreMultiplier = 100
+
+func combine(more, less float64) float64 {
+	return (more*scoreMultiplier + less) / scoreMultiplier
+}
+
+func byValue(c card.Card, t card.Suit) float64 {
+	return float64(c.TrumpValue(t)) / float64(card.MaxTrumpValue)
+}
+
+func byNegValue(c card.Card, t card.Suit) float64 {
+	return 1.0 - byValue(c, t)
+}
+
+func byPoints(c card.Card, t card.Suit) float64 {
+	points := float64(c.Points(t)) / float64(c.MaxPoints)
+	return combine(points, byNegValue(c, t))
+}
+
+func byFives(c card.Card, t card.Suit) float64 {
+	five := 0.0
+	if c.Suit == t && (c.Value == card.Five || c.Value == card.OffFive) {
+		five = 1.0
+	}
+	return combine(five, byNegValue(c, t))
+}
+
 // Basic Logic:
-//
-// If I'm leading:
-//   If I have the high card:
-//     Score based on value
-//   Else:
-//     Score based on inverse of points
-// Else If I'm not leading:
-//   If Offsuit:
-//     If I have a 5 and I am last:
-//       Score the 5!
-//     Else:
-//       If I am second to last and there's a 5 out I can cover:
-//         Score inverse of value for value above 5
-//       Else:
-//         Score inverse of value
-//   Else:
-//     If there's a 5:
-//       Score by value
-//     Else:
-//       If partner played the high card out:
-//	   If I have a 5:
-//	     Score 5s
-//         Else:
-//           Score by inverse value
-//       Else:
-//         If partner is winning:
-//           Score by inverse value
-//         Else:
-//           If partner hasn't played yet:
-//             If I have high card:
-//               Score high card
-//             Else:
-//               If I can take lead:
-//                 Score inverse value where I can take lead
-//               Else:
-//                 Score inverse points, inverse value
-//           Else:
-//             If there are more than 0 point showing:
-//               If I can take lead:
-//                 Score by value on lead
-//               Else:
-//                 Score by inverse value
-//             Else:
-//               If I am last:
-//                 Score by inverse value, points
-//               Else:
-//                 If I can take lead:
-//                   Score by value on lead
-//                 Else:
-//                   Score by inverse value
 var basicTree = &tree{
+	// If I'm leading:
+	goLeft: logic.Logic.IAmLeading,
 	left: &tree{
-		
+		// If I have the high card:
+		goLeft: logic.Logic.IHaveHighCard,
+		// Score based on value
+		left: &tree{score: byValue},
+		// Else:
+		// Score based on inverse of points
+		right: &tree{score: byNegPoints},
 	},
+	// Else:
 	right: &tree{
-		
-	},
-	goLeft: func(l logic.Logic, c card.Card) bool {
-		return false	
+		// If Offsuit:
+		goLeft: logic.Logic.OffsuitLead,
+		left: &tree{
+			// If I have a 5 and I am last:
+			goLeft: func(l logic.Logic) bool {
+				return l.IHaveAFive() && l.IAmLast()
+			},
+			// Score the 5!
+			left: &tree{score: byFives},
+			// Else:
+			right: &tree{
+				// If I am second to last and there's a 5 out I can cover:
+				goLeft: func(l logic.Logic) bool {
+
+				},
+				left: &tree{
+					// Score inverse of value for value above 5
+					score: 0,
+				},
+				// Else:
+				right: &tree{
+					// Score inverse of value
+					score: 0,
+				},
+			},
+		},
+		// Else:
+		right: &tree{
+			// If there's a 5:
+			goLeft: func(l logic.Logic) bool {
+
+			},
+			left: &tree{
+				// Score by value
+				score: 0,
+			},
+			// Else:
+			right: &tree{
+				// If partner played the high card out:
+				goLeft: func(l logic.Logic) bool {
+
+				},
+				left: &tree{
+					// If I have a 5:
+					goLeft: func(l logic.Logic) bool {
+
+					},
+					left: &tree{
+						// Score 5s
+						score: 0,
+					},
+					// Else:
+					right: &tree{
+						// Score by inverse value
+						score: 0,
+					},
+				},
+				// Else:
+				right: &tree{
+					// If partner is winning:
+					goLeft: func(l logic.Logic) bool {
+
+					},
+					left: &tree{
+						// Score by inverse value
+						score: 0,
+					},
+					// Else:
+					right: &tree{
+						// If partner hasn't played yet:
+						goLeft: func(l logic.Logic) bool {
+
+						},
+						left: &tree{
+							// If I have high card:
+							goLeft: func(l logic.Logic) bool {
+
+							},
+							left: &tree{
+								// Score high card
+								score: 0,
+							},
+							// Else:
+							right: &tree{
+								// If I can take lead:
+								goLeft: func(l logic.Logic) bool {
+
+								},
+								left: &tree{
+									// Score inverse value where I can take lead
+									score: 0,
+								},
+								// Else:
+								right: &tree{
+									// Score inverse points, inverse value
+									score: 0,
+								},
+							},
+						},
+						// Else:
+						right: &tree{
+							// If there are more than 0 point showing:
+							goLeft: func(l logic.Logic) bool {
+
+							},
+							left: &tree{
+								// If I can take lead:
+								goLeft: func(l logic.Logic) bool {
+
+								},
+								left: &tree{
+									// Score by value on lead
+									score: 0,
+								},
+								// Else:
+								right: &tree{
+									// Score by inverse value
+									score: 0,
+								},
+							},
+							// Else:
+							right: &tree{
+								// If I am last:
+								goLeft: func(l logic.Logic) bool {
+
+								},
+								left: &tree{
+									// Score by inverse value, points
+									score: 0,
+								},
+								// Else:
+								right: &tree{
+									// If I can take lead:
+									goLeft: func(l logic.Logic) bool {
+
+									},
+									left: &tree{
+										// Score by value on lead
+										score: 0,
+									},
+									// Else:
+									right: &tree{
+										// Score by inverse value
+										score: 0,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	},
 }
 
@@ -147,17 +281,17 @@ func noisily(rate float64, score scorer) decider {
 type tree struct {
 	left   *tree
 	right  *tree
-	goLeft func(l logic.Logic, c card.Card) bool
-	score  float64
+	goLeft func(l logic.Logic) bool
+	score  func(c card.Card) float64
 }
 
 // evaluate traverses the decision tree using the given logic and card,
 // returning the score of the leaf we end up at.
 func (t *tree) evaluate(l logic.Logic, c card.Card) float64 {
 	if t.left == nil && t.right == nil {
-		return t.score
+		return t.score(c, l.State.Trump)
 	}
-	if t.right == nil || t.goLeft(l, c) {
+	if t.right == nil || t.goLeft(l) {
 		return t.left.evaluate(l, c)
 	}
 	return t.right.evaluate(l, c)
