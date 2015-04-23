@@ -118,7 +118,7 @@ const (
 
 // Value returns the value of the card given the trump suit.
 // The range is arbitrary, only order is guaranteed.
-func (c Card) TrumpValue(s Suit) int {
+func (c Card) TrumpValue(s Suit) Value {
 	if c.Suit != s {
 		return c.Value
 	}

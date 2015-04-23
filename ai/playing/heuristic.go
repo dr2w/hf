@@ -17,6 +17,8 @@ var (
 	NoisyPlayer        = noisily(0.2, scorerFromDT(basicTree))
 )
 
+type scoreFn func(c card.Card, t card.Suit) float64
+
 const scoreMultiplier = 100
 
 func combine(more, less float64) float64 {
@@ -34,6 +36,19 @@ func byNegValue(c card.Card, t card.Suit) float64 {
 func byPoints(c card.Card, t card.Suit) float64 {
 	points := float64(c.Points(t)) / float64(c.MaxPoints)
 	return combine(points, byNegValue(c, t))
+}
+
+func byNegPoints(c card.Card, t card.Suit) float64 {
+    return 1.0 - byPoints(c, t)
+}
+
+func forValuesAbove(v card.Value, f scoreFn) scoreFn {
+    return func(c card.Card, t card.Suit) float64 {
+        if c.TrumpValue(t) <= v {
+            return 0.0
+        }
+        return f(c, t)
+    }
 }
 
 func byFives(c card.Card, t card.Suit) float64 {
@@ -72,16 +87,16 @@ var basicTree = &tree{
 			right: &tree{
 				// If I am second to last and there's a 5 out I can cover:
 				goLeft: func(l logic.Logic) bool {
-
+                    return l.NextPlayerIsLast() && l.AFiveIsOut() && !l.IHaveAFive() && l.ICanCoverAFive()
 				},
 				left: &tree{
 					// Score inverse of value for value above 5
-					score: 0,
+					score: forValuesAbove(card.Five, byNegValue),
 				},
 				// Else:
 				right: &tree{
 					// Score inverse of value
-					score: 0,
+					score: byNegValue,
 				},
 			},
 		},
@@ -89,32 +104,21 @@ var basicTree = &tree{
 		right: &tree{
 			// If there's a 5:
 			goLeft: func(l logic.Logic) bool {
-
+                l.TrickHasAFive()
 			},
 			left: &tree{
 				// Score by value
-				score: 0,
+				score: byValue,
 			},
 			// Else:
 			right: &tree{
 				// If partner played the high card out:
 				goLeft: func(l logic.Logic) bool {
-
+                    l.PartnerPlayedHighCardOut()
 				},
 				left: &tree{
-					// If I have a 5:
-					goLeft: func(l logic.Logic) bool {
-
-					},
-					left: &tree{
-						// Score 5s
-						score: 0,
-					},
-					// Else:
-					right: &tree{
-						// Score by inverse value
-						score: 0,
-					},
+                    // Score by fives then inverse value
+                    score: byFives,
 				},
 				// Else:
 				right: &tree{
@@ -124,7 +128,7 @@ var basicTree = &tree{
 					},
 					left: &tree{
 						// Score by inverse value
-						score: 0,
+						score: byNegValue,
 					},
 					// Else:
 					right: &tree{
@@ -176,7 +180,7 @@ var basicTree = &tree{
 								// Else:
 								right: &tree{
 									// Score by inverse value
-									score: 0,
+									score: byNegValue,
 								},
 							},
 							// Else:
@@ -202,7 +206,7 @@ var basicTree = &tree{
 									// Else:
 									right: &tree{
 										// Score by inverse value
-										score: 0,
+										score: byNegValue,
 									},
 								},
 							},
@@ -282,7 +286,7 @@ type tree struct {
 	left   *tree
 	right  *tree
 	goLeft func(l logic.Logic) bool
-	score  func(c card.Card) float64
+	score  func(c card.Card, t card.Suit) float64
 }
 
 // evaluate traverses the decision tree using the given logic and card,
