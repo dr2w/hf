@@ -34,7 +34,7 @@ func byNegValue(c card.Card, t card.Suit) float64 {
 }
 
 func byPoints(c card.Card, t card.Suit) float64 {
-	points := float64(c.Points(t)) / float64(c.MaxPoints)
+	points := float64(c.Points(t)) / float64(card.MaxPoints)
 	return combine(points, byNegValue(c, t))
 }
 
@@ -65,7 +65,7 @@ var basicTree = &tree{
 	goLeft: logic.Logic.IAmLeading,
 	left: &tree{
 		// If I have the high card:
-		goLeft: logic.Logic.IHaveHighCard,
+		goLeft: logic.Logic.IHaveHighCardOut,
 		// Score based on value
 		left: &tree{score: byValue},
 		// Else:
@@ -103,9 +103,7 @@ var basicTree = &tree{
 		// Else:
 		right: &tree{
 			// If there's a 5:
-			goLeft: func(l logic.Logic) bool {
-                l.TrickHasAFive()
-			},
+			goLeft: logic.Logic.TrickHasAFive,
 			left: &tree{
 				// Score by value
 				score: byValue,
@@ -113,9 +111,7 @@ var basicTree = &tree{
 			// Else:
 			right: &tree{
 				// If partner played the high card out:
-				goLeft: func(l logic.Logic) bool {
-                    l.PartnerPlayedHighCardOut()
-				},
+				goLeft: logic.Logic.PartnerPlayedHighCardOut,
 				left: &tree{
                     // Score by fives then inverse value
                     score: byFives,
@@ -123,9 +119,7 @@ var basicTree = &tree{
 				// Else:
 				right: &tree{
 					// If partner is winning:
-					goLeft: func(l logic.Logic) bool {
-
-					},
+					goLeft: logic.Logic.PartnerPlayedHighCard,
 					left: &tree{
 						// Score by inverse value
 						score: byNegValue,
@@ -133,49 +127,39 @@ var basicTree = &tree{
 					// Else:
 					right: &tree{
 						// If partner hasn't played yet:
-						goLeft: func(l logic.Logic) bool {
-
-						},
+						goLeft: logic.Logic.PartnerToPlay,
 						left: &tree{
-							// If I have high card:
-							goLeft: func(l logic.Logic) bool {
-
-							},
+							// If I have high card out:
+							goLeft: logic.Logic.IHaveHighCardOut,
 							left: &tree{
 								// Score high card
-								score: 0,
+								score: byValue,
 							},
 							// Else:
 							right: &tree{
 								// If I can take lead:
-								goLeft: func(l logic.Logic) bool {
-
-								},
+								goLeft: logic.Logic.IHaveHighCard,
 								left: &tree{
 									// Score inverse value where I can take lead
-									score: 0,
+									score: byValue, // TODO(drw)
 								},
 								// Else:
 								right: &tree{
 									// Score inverse points, inverse value
-									score: 0,
+									score: byNegPoints,
 								},
 							},
 						},
 						// Else:
 						right: &tree{
 							// If there are more than 0 point showing:
-							goLeft: func(l logic.Logic) bool {
-
-							},
+							goLeft: logic.Logic.PointsAreShowing,
 							left: &tree{
 								// If I can take lead:
-								goLeft: func(l logic.Logic) bool {
-
-								},
+								goLeft: logic.Logic.IHaveHighCard,
 								left: &tree{
 									// Score by value on lead
-									score: 0,
+									score: byValue,
 								},
 								// Else:
 								right: &tree{
@@ -186,22 +170,18 @@ var basicTree = &tree{
 							// Else:
 							right: &tree{
 								// If I am last:
-								goLeft: func(l logic.Logic) bool {
-
-								},
+								goLeft: logic.Logic.IAmLast,
 								left: &tree{
 									// Score by inverse value, points
-									score: 0,
+									score: byNegPoints,
 								},
 								// Else:
 								right: &tree{
 									// If I can take lead:
-									goLeft: func(l logic.Logic) bool {
-
-									},
+									goLeft: logic.Logic.IHaveHighCard,
 									left: &tree{
 										// Score by value on lead
-										score: 0,
+										score: byValue,
 									},
 									// Else:
 									right: &tree{

@@ -52,6 +52,13 @@ func (t Trick) Winner(trump card.Suit) (seat.Seat, card.Card) {
 	return maxSeat, maxCard
 }
 
+// WouldTakeLead returns true iff the given cars would take the lead if
+// played on this trick given the current state.
+func (t Trick) WouldTakeLead(c card.Card, trump card.Suit) bool {
+    _, winning := t.Winner(trump)
+    return c.Beats(winning, trump, t.SuitLead())
+}
+
 // NextSeat takes the most recently played Trick and returns the Seat that should play next.
 func (t Trick) NextSeat(trump card.Suit) seat.Seat {
 	if len(t.Cards) >= Size {

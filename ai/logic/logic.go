@@ -51,7 +51,7 @@ func (l Logic) MyTopTrump() card.Card {
 	return max(l.MyTrump())
 }
 
-func (l Logic) IHaveHighCard() bool {
+func (l Logic) IHaveHighCardOut() bool {
 	return l.IHave(l.TopTrumpOut())
 }
 
@@ -95,6 +95,23 @@ func (l Logic) IAmLast() bool {
 	return len(l.State.LastPlayed().Cards) == 3
 }
 
+func (l Logic) IHaveHighCard() bool {
+    for _, c := range l.MyHand() {
+        if l.State.LastPlayed().WouldTakeLead(c, l.State.Trump) {
+            return true
+        }
+    }
+    return false
+}
+
+func (l Logic) PointsAreShowing() bool {
+    points := 0
+    for _, c := range l.State.LastPlayed().AsCardSet() {
+        points += c.Points(l.State.Trump)
+    }
+    return points > 0
+}
+
 func (l Logic) NextPlayerIsLast() bool {
 	// TODO(drw): Add support for players throwing in.
     return len(l.State.LastPlayed().Cards) == 2
@@ -105,9 +122,19 @@ func (l Logic) TrickHasAFive() bool {
             l.State.LastPlayed().AsCardSet().Contains(card.Card{card.OffFive, l.State.Trump})
 }
 
+func (l Logic) PartnerPlayedHighCard() bool {
+    seat, _ := l.State.LastPlayed().Winner(l.State.Trump)
+    return seat == l.Perspective.Partner()
+}
+
 func (l Logic) PartnerPlayedHighCardOut() bool {
     c, ok := l.State.LastPlayed().Cards[l.Perspective.Partner()]
     return ok && c == l.TopTrumpOut()
+}
+
+func (l Logic) PartnerToPlay() bool {
+    _, ok := l.State.LastPlayed().Cards[l.Perspective.Partner()]
+    return !ok
 }
 
 func max(s card.Set) card.Card {
