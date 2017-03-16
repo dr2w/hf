@@ -1,5 +1,11 @@
 package ai
 
+import (
+	"dr2w.com/hf/ai/bidding"
+	"dr2w.com/hf/ai/playing"
+	"dr2w.com/hf/model/action"
+)
+
 // Dumb chooses randomly or always chooses the same option.
 var Dumb = AIPlayer{
 	Name: "Dumb",
@@ -17,9 +23,9 @@ var DRW = AIPlayer{
 	Name: "DRW",
 	Deciders: map[action.Type]Decider{
 		action.Deal:    first,
-		action.Bid:     bidding.DRWValue,
-		action.Trump:   bidding.DRWSuit,
+		action.Bid:     Decider(bidding.DRWValue),
+		action.Trump:   Decider(bidding.DRWSuit),
 		action.Discard: simpleDiscard,
-		action.Play:    playing.DRWPlayer,
+		action.Play:    Decider(playing.InconsistentPlayer),
 	},
 }
