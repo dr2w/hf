@@ -1,0 +1,15 @@
+runtime: go
+api_version: go1
+application: drw-hf
+module: default
+version: v1
+
+handlers:
+
+- url: /(.*\.(gif|png|jpg))$
+  static_files: static/\1
+  upload: static/.*\.(gif|png|jpg)$
+
+- url: /.*
+  login: required
+  script: _go_app
