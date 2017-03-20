@@ -3,6 +3,7 @@ package card
 
 import (
 	"fmt"
+	"sort"
 )
 
 type Suit int
@@ -172,6 +173,22 @@ func (s Set) AsTrump(trump Suit) (at Set) {
 		at = append(at, c)
 	}
 	return at
+}
+
+type BySuitThenValue []Card
+
+func (s BySuitThenValue) Len() int { return len(s) }
+func (s BySuitThenValue) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s BySuitThenValue) Less(i, j int) bool {
+    if s[i].Suit == s[j].Suit {
+	return s[i].Value > s[j].Value
+    }
+    return s[i].Suit > s[j].Suit
+}
+
+// Sort sorts the given card set by suit then by value in place.
+func (s Set) Sort() {
+    sort.Sort(BySuitThenValue(s))
 }
 
 // SameColorSuit takes a suit and returns the other suit of the same color.

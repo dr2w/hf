@@ -4,6 +4,7 @@ package action
 import (
 	"fmt"
 
+	"dr2w.com/hf/model/card"
 	"dr2w.com/hf/model/seat"
 	"dr2w.com/hf/model/state"
 )
@@ -88,5 +89,10 @@ var actionMap = map[Type]Func{
 
 // NextState converts a State and an Action into the next State and Action.
 func NextState(s state.State, m Message) (state.State, Message, error) {
-	return actionMap[m.Type](s, m)
+	newState, newMessage, e := actionMap[m.Type](s, m)
+	// We enforce sorting on players' hands.
+	for seat := range newState.Hands {
+		card.Set(*newState.Hands[seat]).Sort()
+	}
+	return newState, newMessage, e
 }

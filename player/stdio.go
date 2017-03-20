@@ -6,10 +6,14 @@ import (
     "strconv"
     "time"
 
-    "dr2w.com/hf/model/state"
-    "dr2w.com/hf/model/seat"
     "dr2w.com/hf/model/action"
+    "dr2w.com/hf/model/bid"
+    "dr2w.com/hf/model/card"
+    "dr2w.com/hf/model/seat"
+    "dr2w.com/hf/model/state"
 )
+
+var clearLines = 40
 
 type Stdio struct {
     Seat seat.Seat
@@ -21,7 +25,7 @@ func (p Stdio) Play(s state.State, m action.Message) []int {
     clearScreen()
     p.Seat = m.Seat
     displayState(s, m.Type, p.Seat)
-    return solicitChoice(m)
+    return solicitChoice(m, s)
 }
 
 // Update prints the new relevant State to stdout.
@@ -33,7 +37,7 @@ func (p Stdio) Update(s state.State, t action.Type) {
 
 // clearScreen scrolls the output to make way for a new update.
 func clearScreen() {
-    for i := 0; i < 10; i++ {
+    for i := 0; i < clearLines; i++ {
         fmt.Printf("\n")
     }
 }
@@ -41,32 +45,37 @@ func clearScreen() {
 // displayState prints the current game state to stdout in an informative format. 
 func displayState(s state.State, t action.Type, st seat.Seat) {
     if t == action.Bid || t == action.Trump {
-        displayBidding(s)
+        displayBidding(s, st)
+    } else {
+        displayPlays(s, st)
     }
-    displayPlays(s, st)
 }
 
 // displayBidding shows the current scores as well as the bids placed so far.
-func displayBidding(s state.State) {
+func displayBidding(s state.State, st seat.Seat) {
     displayScores(s)
     displayBids(s)
+    displayHand(s, st, []int{})
 }
 
 // displayScores prints out a single line with the current scores.
 func displayScores(s state.State) {
-    fmt.Printf("East/West: %d\tNorth/South: %d\n", s.Score[seat.East], s.Score[seat.North])
+    fmt.Printf("Score:\nEast/West: %d\tNorth/South: %d\n", s.Score[seat.East], s.Score[seat.North])
 }
 
 func displayBids(s state.State) {
     fmt.Printf("\nN\tE\tS\tW\n")
-    fmt.Printf("%d\t%d\t%d\t%d\n", s.Bids[seat.North],s.Bids[seat.East],s.Bids[seat.South],s.Bids[seat.West])
+    fmt.Printf("%s\t%s\t%s\t%s\n",
+               s.Bids[seat.North].String(),
+               s.Bids[seat.East].String(),
+               s.Bids[seat.South].String(),
+               s.Bids[seat.West].String())
 }
 
 // displayPlays shows the trump and bid as well as the current hand and current play.
 func displayPlays(s state.State, st seat.Seat) {
     displayWinningBid(s)
     displayPlay(s)
-    displayHand(s, st)
 }
 
 // displayWinningBid shows the suit and value of the winning bid.
@@ -84,34 +93,98 @@ func displayPlay(s state.State) {
         return
     }
     lastTrick := s.Played[len(s.Played)-1]
-    fmt.Printf("\nPlay: %s\n", lastTrick)
+    fmt.Printf("\nPlay:\n")
+    cardString := func(st seat.Seat) string {
+	c := lastTrick.Cards[st]
+	if c.Value == card.NoValue {
+		return ""
+	}
+	return c.String()
+    }
+    fmt.Printf("            N: %s\n", cardString(seat.North))
+    fmt.Printf("W: %s                      E: %s\n",
+               cardString(seat.West), cardString(seat.East))
+    fmt.Printf("            S: %s\n", cardString(seat.South))
 }
 
 // displayHand shows the controlling (not active) player's hand.
-func displayHand(s state.State, st seat.Seat) {
+func displayHand(s state.State, st seat.Seat, options []int) {
     if s.Hands[st] == nil {
         return
     }
-    fmt.Printf("\nHand: %s\n", s.Hands[st])
+    fmt.Printf("\nHand:\n")
+    var suit card.Suit
+    cards := []string{}
+    for i, c := range *s.Hands[st] {
+         if c.Suit != suit {
+             if len(cards) > 0 {
+                 fmt.Printf("%s: %s\n", suit.String(), strings.Join(cards, ","))
+		 cards = []string{}
+             }
+             suit = c.Suit
+         }
+	 cardString := c.Value.String()
+	 for _, o := range options {
+		if o == i {
+			cardString = cardString + "[" + strconv.Itoa(i) + "]"
+		}
+	 }
+	 cards = append(cards, cardString)
+    }
+    if len(cards) > 0 {
+        fmt.Printf("%s: %s", suit.String(), strings.Join(cards, ","))
+    }
+}
+
+// displayBid prints out a selection of available bids along with the
+// numerical selection values.
+func displayBid(m action.Message) {
+	names := make([]string, len(m.Options))
+	values := make([]string, len(m.Options))
+	for i := range m.Options {
+	    names[i] = bid.Bid(i).String()
+	    values[i] = "[" + strconv.Itoa(i) + "]"
+        }
+	fmt.Printf("\n\n%s\n%s\n", strings.Join(names, "\t"), strings.Join(values, "\t"))
+	fmt.Printf("Please select a bid: ")
+}
+
+// displayHandForPlay prints out the player's hand along with numerical selection
+// values.
+func displayHandForPlay(m action.Message, s state.State) {
+	displayHand(s, m.Seat, m.Options)
+	fmt.Printf("\nPlease select a card to play: ")
+}
+
+// displayChoice shows the options the current player can choose from.
+func displayChoice(m action.Message, s state.State) {
+    switch m.Type {
+	case action.Bid:
+		displayBid(m)
+	case action.Play:
+		displayHandForPlay(m, s)
+	default:
+    		fmt.Printf("\n%s: ", m)
+    }
 }
 
 // solicitChoice prompts the user to select one or more of a set of options and returns
 // the selections.
-func solicitChoice(m action.Message) []int {
-    fmt.Printf("\n%s: ", m)
+func solicitChoice(m action.Message, s state.State) []int {
+    displayChoice(m, s)
     text := ""
     _, err := fmt.Scanln(&text)
     if err != nil {
             fmt.Println("error when reading from stdin, please try again.")
-            return solicitChoice(m)
+            return solicitChoice(m, s)
     }
     selections := strings.Split(text, ",")
     result := make([]int, len(selections))
-    for i, s := range selections {
-        result[i], err = strconv.Atoi(s)
+    for i, sel := range selections {
+        result[i], err = strconv.Atoi(sel)
         if err != nil {
             fmt.Printf("can't interpret %q as a number:\n%s\n", result[i], err)
-            return solicitChoice(m)
+            return solicitChoice(m, s)
         }
     }
     return result
