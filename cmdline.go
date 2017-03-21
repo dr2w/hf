@@ -13,9 +13,9 @@ func main() {
     for i := 0; i < 20000; i++ {
         g, _ := game.New(
             seat.East,
-            ai.Dumb,
-            ai.Dumb,
-            ai.Dumb,
+            ai.DRW,
+            ai.DRW,
+            ai.DRW,
             player.Stdio{},
         )
         err := g.Resolve()

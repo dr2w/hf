@@ -163,6 +163,8 @@ func displayChoice(m action.Message, s state.State) {
 		displayBid(m)
 	case action.Play:
 		displayHandForPlay(m, s)
+	case action.Discard:
+		displayHandForPlay(m, s)
 	default:
     		fmt.Printf("\n%s: ", m)
     }
@@ -187,5 +189,6 @@ func solicitChoice(m action.Message, s state.State) []int {
             return solicitChoice(m, s)
         }
     }
+    fmt.Printf("Selected: %v", result)
     return result
 }
