@@ -107,7 +107,8 @@ func displayPlay(s state.State) {
     fmt.Printf("            S: %s\n", cardString(seat.South))
 }
 
-// displayHand shows the controlling (not active) player's hand.
+// displayHand shows the given seat's hand.
+// options is an array of ints indicating which indices in the hand are selectable.
 func displayHand(s state.State, st seat.Seat, options []int) {
     if s.Hands[st] == nil {
         return
@@ -149,11 +150,16 @@ func displayBid(m action.Message) {
 	fmt.Printf("Please select a bid: ")
 }
 
-// displayHandForPlay prints out the player's hand along with numerical selection
-// values.
-func displayHandForPlay(m action.Message, s state.State) {
-	displayHand(s, m.Seat, m.Options)
-	fmt.Printf("\nPlease select a card to play: ")
+// displayTrumpOptions prints out the player's hand along with numerical
+// suit selection values.
+func displayTrumpOptions(m action.Message, s state.State) {
+	var suitOptions []string
+	for i := range m.Options {
+		suitName := card.Suits[i].String()
+		suitOptions = append(suitOptions, suitName + "[" + strconv.Itoa(i) + "]")
+	}
+	fmt.Printf("\nSuit: " + strings.Join(suitOptions, ","))
+	fmt.Printf("\nPlease select a suit: ")
 }
 
 // displayChoice shows the options the current player can choose from.
@@ -162,11 +168,16 @@ func displayChoice(m action.Message, s state.State) {
 	case action.Bid:
 		displayBid(m)
 	case action.Play:
-		displayHandForPlay(m, s)
+		displayHand(s, m.Seat, m.Options)
+		fmt.Printf("\n\nPlease select a card to play:")
 	case action.Discard:
-		displayHandForPlay(m, s)
+		displayHand(s, m.Seat, m.Options)
+		toDiscard := len(card.Set(*s.Hands[m.Seat])) - 6
+		fmt.Printf("\n\nPlease select %d cards to discard (use commas):", toDiscard)
+	case action.Trump:
+		displayTrumpOptions(m, s)
 	default:
-    		fmt.Printf("\n%s: ", m)
+    		fmt.Printf("\n\n%s: ", m)
     }
 }
 

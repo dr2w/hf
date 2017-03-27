@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"dr2w.com/hf/model/bid"
+	"dr2w.com/hf/model/card"
 	"dr2w.com/hf/model/hand"
 	"dr2w.com/hf/model/seat"
 	"dr2w.com/hf/model/state"
@@ -36,11 +37,16 @@ func dealWithPattern(s state.State, cpd int, dph int) (state.State, Message, err
 			}
 			cards, err := s.Deck.Deal(cpd)
 			if err != nil {
-				return state.State{}, Message{}, fmt.Errorf("Unable to deal %d cards from %v: %s", cpd, s.Deck, err)
+				return state.State{}, Message{},
+                                       fmt.Errorf("Unable to deal %d cards from %v: %s", cpd, s.Deck, err)
 			}
 			s.Hands[st].Add(cards...)
 			st = st.Next()
 		}
+	}
+	// We enforce sorting on players' hands everywhere we add to them.
+	for seat := range s.Hands {
+		card.Set(*s.Hands[seat]).Sort()
 	}
 	r := Message{
 		Type:    Bid,

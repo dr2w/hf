@@ -25,6 +25,7 @@ func discards(trump card.Suit, h *hand.Hand) (options []int) {
 			options = append(options, i)
 		}
 	}
+	fmt.Printf("\n\n%v\n%v\n\n", card.Set(*h), options)
 	return options
 }
 
@@ -35,7 +36,10 @@ func redeal(s state.State, _ Message) (state.State, Message, error) {
     winner, _ := s.WinningBid()
     st := s.Dealer.Next()
     for i := 0; i < len(seat.Order); i++ {
+	fmt.Printf("Seat: %s\n", st.String())
+	fmt.Printf("Winner: %s\n", winner.String())
         if st == winner {
+	    st = st.Next()
             continue
         }
         newHand := &hand.Hand{}
@@ -45,6 +49,8 @@ func redeal(s state.State, _ Message) (state.State, Message, error) {
             }
         }
         toDeal := handSize - newHand.Length()
+	fmt.Printf("\nNew Hand: %s\n", newHand.String())
+	fmt.Printf("ToDeal: %d", toDeal)
         if toDeal > 0 {
             cards, err := s.Deck.Deal(toDeal)
             if err != nil {
@@ -73,6 +79,10 @@ func redeal(s state.State, _ Message) (state.State, Message, error) {
         return state.State{}, Message{}, err
     }
     s.Hands[winner].Add(cards...)
+    // We enforce sorting on players' hands everywhere we add to them.
+    for st := range s.Hands {
+	card.Set(*s.Hands[st]).Sort()
+    }
 	r := Message{
 		Type:    Discard,
 		Seat:    winner,
