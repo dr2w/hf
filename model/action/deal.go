@@ -52,6 +52,7 @@ func dealWithPattern(s state.State, cpd int, dph int) (state.State, Message, err
 		Type:    Bid,
 		Seat:    s.Dealer.Next(),
 		Options: SelectionRange(0, len(bid.Values)),
+		Expect: 1,
 	}
 	return s, r, nil
 }

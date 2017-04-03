@@ -20,9 +20,12 @@ func trump(s state.State, m Message) (state.State, Message, error) {
 	five.Suit = s.Trump
 	five.Value = card.OffFive
 
+    	winner, _ := s.WinningBid()
+	firstToDiscard := winner.Next()
 	return s, Message{
-		Type:    ReDeal,
-		Seat:    s.Dealer,
-		Options: []int{0},
+		Type:    Discard,
+		Seat:    firstToDiscard,
+		Options: s.Hands[firstToDiscard].Discards(s.Trump),
+		Expect: s.Hands[firstToDiscard].NumToDiscard(s.Trump),
 	}, nil
 }

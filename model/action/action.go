@@ -55,6 +55,7 @@ type Message struct {
 	Type    Type
 	Seat    seat.Seat
 	Options []int
+	Expect int
 }
 
 // String returns a human readable representation of the Message.

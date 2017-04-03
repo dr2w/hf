@@ -49,12 +49,14 @@ func next(s state.State) (Message, error) {
             Type:  Score,
             Seat:  seat.None,
             Options: []int{0},
+	    Expect: 1,
         }, nil
 	}
 	return Message{
 		Type:    Play,
 		Seat:    st,
 		Options: validCards(h, s.Trump, s.LastPlayed()),
+		Expect: 1,
 	}, nil
 }
 

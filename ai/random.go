@@ -1,6 +1,8 @@
 package ai
 
 import (
+	"math/rand"
+
 	"dr2w.com/hf/model/action"
 	"dr2w.com/hf/model/state"
 )
@@ -9,24 +11,19 @@ import (
 // non-point trump cards.
 func simpleDiscard(s state.State, m action.Message) (discards []int) {
 	hand := s.Hands[m.Seat]
-	n := hand.Length() - 6 // TODO(drw): factor this (and others) out into a constants file.
-	if len(m.Options) < n {
+	winner, _ := s.WinningBid()
+	if m.Seat != winner {
+		return hand.Discards(s.Trump)
+	}
+	n := hand.ExtraCards()
+	d := hand.Discards(s.Trump)
+	if len(m.Options) < n || len(d) < n {
 		return []int{} // Triggers downstream error
 	}
-	var (
-		onlyTrump bool
-		index     int
-	)
-	for len(discards) < n {
-		if !onlyTrump && (*hand)[index].Suit != s.Trump ||
-			onlyTrump && (*hand)[index].Suit == s.Trump {
-			discards = append(discards, index)
-		}
-		index++
-		if index >= hand.Length() {
-			onlyTrump = true
-			index = 0
-		}
+	discards = make([]int, n)
+	perm := rand.Perm(n)
+	for i := 0; i < n; i++ {
+		discards[i] = d[perm[i]]
 	}
 	return discards
 }

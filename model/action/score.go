@@ -42,5 +42,5 @@ func score(s state.State, m Message) (state.State, Message, error) {
         next.Score[st] = sc + scores[st]
     }
     next.Rounds = s.Rounds + 1
-    return next, Message{Deal, next.Dealer, []int{0}}, nil
+    return next, Message{Deal, next.Dealer, []int{0}, 1}, nil
 }

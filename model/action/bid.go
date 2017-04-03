@@ -62,6 +62,7 @@ func reqForNextBid(s state.State) (Message, error) {
 		Type:    Bid,
 		Seat:    st,
 		Options: append([]int{int(bid.Pass)}, SelectionRange(int(b)+1, len(bid.Values))...),
+		Expect: 1,
 	}, nil
 }
 
@@ -73,5 +74,6 @@ func reqForChooseSuit(s state.State) Message {
 		Type:    Trump,
 		Seat:    seat,
 		Options: SelectionRange(0, len(card.Suits)), // 4 Suits
+		Expect: 1,
 	}
 }

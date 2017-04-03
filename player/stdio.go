@@ -158,22 +158,22 @@ func displayTrumpOptions(m action.Message, s state.State) {
 		suitName := card.Suits[i].String()
 		suitOptions = append(suitOptions, suitName + "[" + strconv.Itoa(i) + "]")
 	}
-	fmt.Printf("\nSuit: " + strings.Join(suitOptions, ","))
-	fmt.Printf("\nPlease select a suit: ")
+	fmt.Printf("Suit: " + strings.Join(suitOptions, "\t") + "\n")
+	fmt.Printf("Please select a suit: ")
 }
 
 // displayChoice shows the options the current player can choose from.
 func displayChoice(m action.Message, s state.State) {
+    fmt.Printf("\n\n")
     switch m.Type {
 	case action.Bid:
 		displayBid(m)
 	case action.Play:
 		displayHand(s, m.Seat, m.Options)
-		fmt.Printf("\n\nPlease select a card to play:")
+		fmt.Printf("\nPlease select a card to play:")
 	case action.Discard:
 		displayHand(s, m.Seat, m.Options)
-		toDiscard := len(card.Set(*s.Hands[m.Seat])) - 6
-		fmt.Printf("\n\nPlease select %d cards to discard (use commas):", toDiscard)
+		fmt.Printf("\nPlease select %d cards to discard (use commas):", m.Expect)
 	case action.Trump:
 		displayTrumpOptions(m, s)
 	default:
@@ -196,9 +196,23 @@ func solicitChoice(m action.Message, s state.State) []int {
     for i, sel := range selections {
         result[i], err = strconv.Atoi(sel)
         if err != nil {
-            fmt.Printf("can't interpret %q as a number:\n%s\n", result[i], err)
+            fmt.Printf("\ncan't interpret %q as a number:\n%s\n", result[i], err)
             return solicitChoice(m, s)
         }
+	var valid bool
+	for _, option := range m.Options {
+	    if result[i] == option {
+		valid = true
+	    }
+	}
+	if !valid {
+	    fmt.Printf("\ninvalid selection: %d, please try again.", result[i])
+	    return solicitChoice(m, s)
+	}
+    }
+    if len(result) != m.Expect {
+	fmt.Printf("\ninvalid selection: must choose %d, you chose %d.", m.Expect, len(result))
+	return solicitChoice(m, s)
     }
     fmt.Printf("Selected: %v", result)
     return result

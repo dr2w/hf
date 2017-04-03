@@ -149,6 +149,16 @@ func (s Set) TrumpCards(trump Suit) (t Set) {
 	return t
 }
 
+// Returns all non-trump cards given a trump suit.
+func (s Set) NonTrumpCards(trump Suit) (t Set) {
+	for _, c := range s {
+		if c.Suit != trump {
+			t = append(t, c)
+		}
+	}
+	return t
+}
+
 // Contains returns true iff this set contains the given card.
 func (s Set) Contains(c1 Card) bool {
 	for _, c2 := range s {
@@ -189,6 +199,11 @@ func (s BySuitThenValue) Less(i, j int) bool {
 // Sort sorts the given card set by suit then by value in place.
 func (s Set) Sort() {
     sort.Sort(BySuitThenValue(s))
+}
+
+// Returns the length of the Card Set.
+func (s Set) Length() int {
+    return len(s)
 }
 
 // SameColorSuit takes a suit and returns the other suit of the same color.
