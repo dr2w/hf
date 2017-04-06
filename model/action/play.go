@@ -32,6 +32,7 @@ func validCards(h *hand.Hand, trump card.Suit, trick trick.Trick) (options []int
 		if c.Suit == trump ||
 			c.Suit == trick.SuitLead() ||
 			trick.Empty() ||
+			trick.Full() ||
 			!h.HasSuit(trick.SuitLead()) {
 			options = append(options, i)
 		}

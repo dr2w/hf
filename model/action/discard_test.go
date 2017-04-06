@@ -4,105 +4,87 @@ import (
 	"reflect"
 	"testing"
 
+	"dr2w.com/hf/model/bid"
 	"dr2w.com/hf/model/card"
 	"dr2w.com/hf/model/hand"
 	"dr2w.com/hf/model/seat"
 	"dr2w.com/hf/model/state"
 )
 
-var discardTests = []struct {
-	name       string
-	inState    state.State
-	inMessage  Message
-	outState   state.State
-	outMessage Message
-	err        bool
+var nextMessageTests = []struct {
+	name    string
+	state   state.State
+	seat    seat.Seat
+	want    Message
 }{
 	{
-		"Bad Counting",
+		"Winner",
 		state.State{
+			Bids: map[seat.Seat]bid.Bid{
+				seat.North: bid.B8,
+			},
 			Hands: map[seat.Seat]*hand.Hand{
-				seat.North: &hand.Hand{card.Card{}, card.Card{}, card.Card{}},
+				seat.North: &hand.Hand{card.Card{}},
 			},
 		},
+		seat.North,
 		Message{
-			Seat:    seat.North,
-			Options: []int{0, 1},
+			Type: Play,
+			Seat: seat.North,
+			Options: []int{0},
+			Expect: 1,
 		},
-		state.State{},
-		Message{},
-		true,
 	},
 	{
-		"End to End",
+		"NextIsWinner",
 		state.State{
+			Bids: map[seat.Seat]bid.Bid{
+				seat.East: bid.B8,
+			},
+			Dealer: seat.South,
+		},
+		seat.North,
+		Message{
+			Type: ReDeal,
+			Seat: seat.South,
+			Options: []int{0},
+			Expect: 1,
+		},
+	},
+	{
+		"NoWinnerYet",
+		state.State{
+			Bids: map[seat.Seat]bid.Bid{
+				seat.South: bid.B8,
+			},
+			Trump: card.Diamonds,
 			Hands: map[seat.Seat]*hand.Hand{
-				seat.North: &hand.Hand{
-					card.Card{card.Seven, card.Clubs},
-					card.Card{card.Eight, card.Clubs},
-					card.Card{card.Joker, card.NoSuit},
-					card.Card{card.Ace, card.Diamonds},
-					card.Card{card.King, card.Clubs},
-				},
 				seat.East: &hand.Hand{
-					card.Card{card.Seven, card.Spades},
-					card.Card{card.Eight, card.Spades},
-					card.Card{card.Ace, card.Hearts},
-					card.Card{card.King, card.Spades},
-					card.Card{card.Seven, card.Clubs},
-					card.Card{card.Eight, card.Clubs},
-					card.Card{card.Joker, card.NoSuit},
-					card.Card{card.Ace, card.Diamonds},
-					card.Card{card.King, card.Clubs},
+					card.Card{card.Ace, card.Clubs},
+					card.Card{card.King, card.Diamonds},
+					card.Card{card.Queen, card.Hearts},
+					card.Card{card.Jack, card.Diamonds},
+					card.Card{card.Ten, card.Clubs},
 				},
 			},
 		},
+		seat.North,
 		Message{
-			Seat:    seat.East,
-			Options: []int{1, 3, 5},
+			Type: Discard,
+			Seat: seat.East,
+			Options: []int{0,2,4},
+			Expect: 3,
 		},
-		state.State{
-			Hands: map[seat.Seat]*hand.Hand{
-				seat.North: &hand.Hand{
-					card.Card{card.Seven, card.Clubs},
-					card.Card{card.Eight, card.Clubs},
-					card.Card{card.Joker, card.NoSuit},
-					card.Card{card.Ace, card.Diamonds},
-					card.Card{card.King, card.Clubs},
-				},
-				seat.East: &hand.Hand{
-					card.Card{card.Seven, card.Spades},
-					card.Card{card.Ace, card.Hearts},
-					card.Card{card.Seven, card.Clubs},
-					card.Card{card.Joker, card.NoSuit},
-					card.Card{card.Ace, card.Diamonds},
-					card.Card{card.King, card.Clubs},
-				},
-			},
-		},
-		Message{
-			Type:    Play,
-			Seat:    seat.East,
-			Options: []int{0, 1, 2, 3, 4, 5},
-		},
-		false,
 	},
 }
+			
+			
 
-func TestDiscard(t *testing.T) {
-	for _, test := range discardTests {
-		s, m, e := discard(test.inState, test.inMessage)
-		if e != nil && !test.err {
-			t.Errorf("%s: unexpected error (%s)", test.name, e)
-		}
-		if e == nil && test.err {
-			t.Errorf("%s: expected error.", test.name)
-		}
-		if s.String() != test.outState.String() {
-			t.Errorf("%s: want state %s, got %s.", test.name, test.outState, s)
-		}
-		if !reflect.DeepEqual(m, test.outMessage) {
-			t.Errorf("%s: want message %s, got %s.", test.name, test.outMessage, m)
+func TestNextMessage(t *testing.T) {
+	for _, test := range nextMessageTests {
+		got := nextMessage(test.state, test.seat)
+		if !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%s: want message %s, got %s.", test.name, test.want, got)
 		}
 	}
 }

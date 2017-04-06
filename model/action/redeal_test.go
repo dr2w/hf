@@ -50,7 +50,7 @@ var discardsTests = []struct {
 
 func TestDiscards(t *testing.T) {
     for _, test := range discardsTests {
-        if got := discards(test.trump, test.hand); !reflect.DeepEqual(got, test.want) {
+        if got := test.hand.Discards(test.trump); !reflect.DeepEqual(got, test.want) {
             t.Errorf("%s: got %v, want %v", test.name, got, test.want)
         }
     }

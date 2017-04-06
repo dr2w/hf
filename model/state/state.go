@@ -91,6 +91,7 @@ func (s State) String() string {
 		}
 	}
 	buffer.WriteString(fmt.Sprintf("Played: %v\n", s.Played))
+	buffer.WriteString(fmt.Sprintf("Rounds: %d\n", s.Rounds))
 	return buffer.String()
 }
 

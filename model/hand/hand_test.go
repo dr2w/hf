@@ -101,3 +101,91 @@ func TestRemove(t *testing.T) {
 		}
 	}
 }
+
+var discardTests = []struct {
+	name string
+	trump card.Suit
+	hand card.Set
+	wantDiscards []int
+	wantNumToDiscard int
+}{
+	{
+		"Simple single",
+		card.Clubs,
+		card.Set{
+			{card.Ace, card.Clubs},
+			{card.Ace, card.Diamonds},
+		},
+		[]int{1},
+		1,
+	},
+	{
+		"Complex multiple",
+		card.Diamonds,
+		card.Set{
+			{card.Ace, card.Spades},
+			{card.Ace, card.Diamonds},
+			{card.Three, card.Diamonds},
+			{card.Five, card.Diamonds},
+			{card.Eight, card.Clubs},
+			{card.Nine, card.Clubs},
+		},
+		[]int{0,4,5},
+		3,
+	},
+	{
+		"All Trump",
+		card.Clubs,
+		card.Set{
+			{card.Ace, card.Clubs},
+		},
+		nil,
+		0,
+	},
+	{
+		"Too many trump",
+		card.Clubs,
+		card.Set{
+			{card.Ace, card.Clubs},
+			{card.King, card.Clubs},
+			{card.Queen, card.Clubs},
+			{card.Jack, card.Clubs},
+			{card.Ten, card.Clubs},
+			{card.Nine, card.Clubs},
+			{card.Three, card.Clubs},
+		},
+		[]int{1,2,5,6},
+		1,
+	},
+	{
+		"Too many point cards",
+		card.Clubs,
+		card.Set{
+			{card.Ace, card.Clubs},
+			{card.Jack, card.Clubs},
+			{card.Joker, card.Clubs},
+			{card.Ten, card.Clubs},
+			{card.Five, card.Clubs},
+			{card.OffFive, card.Clubs},
+			{card.Deuce, card.Clubs},
+		},
+		[]int{6},
+		1,
+	},
+}
+
+func TestDiscards(t *testing.T) {
+	for _, test := range discardTests {
+		hand := Hand(test.hand)
+		gotDiscards := hand.Discards(test.trump)
+		if !reflect.DeepEqual(gotDiscards, test.wantDiscards) {
+			t.Errorf("%s Discards: got %v, want %v", test.name, gotDiscards, test.wantDiscards)
+		}
+
+		gotNumToDiscard := hand.NumToDiscard(test.trump)
+		if gotNumToDiscard != test.wantNumToDiscard {
+			t.Errorf("%s NumToDiscard: got %v, want %v", test.name, gotNumToDiscard, test.wantNumToDiscard)
+		}
+	}
+}
+		

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"dr2w.com/hf/model/bid"
 	"dr2w.com/hf/model/card"
 	"dr2w.com/hf/model/deck"
 	"dr2w.com/hf/model/hand"
@@ -37,9 +38,20 @@ var trumpTests = []struct {
 				card.Card{card.Ace, card.Diamonds},
 				card.Card{card.King, card.Clubs},
 			},
+			Bids: map[seat.Seat]bid.Bid{
+				seat.North: bid.B9,
+			},
 			Hands: map[seat.Seat]*hand.Hand{
-				seat.North: &hand.Hand{card.Card{card.Ten, card.Clubs}, card.Card{card.Five, card.Diamonds}, card.Card{card.Ten, card.Hearts}},
-				seat.East:  &hand.Hand{card.Card{card.Five, card.Clubs}, card.Card{card.Five, card.Spades}},
+				seat.North: &hand.Hand{
+					card.Card{card.Ten, card.Clubs},
+					card.Card{card.Five, card.Diamonds},
+					card.Card{card.Ten, card.Hearts},
+				},
+				seat.East:  &hand.Hand{
+					card.Card{card.Five, card.Clubs},
+					card.Card{card.Five, card.Spades},
+					card.Card{card.Seven, card.Spades},
+				},
 			},
 		},
 		Message{
@@ -54,16 +66,28 @@ var trumpTests = []struct {
 				card.Card{card.Ace, card.Diamonds},
 				card.Card{card.King, card.Clubs},
 			},
+			Bids: map[seat.Seat]bid.Bid{
+				seat.North: bid.B9,
+			},
 			Hands: map[seat.Seat]*hand.Hand{
-				seat.North: &hand.Hand{card.Card{card.Ten, card.Clubs}, card.Card{card.Five, card.Diamonds}, card.Card{card.Ten, card.Hearts}},
-				seat.East:  &hand.Hand{card.Card{card.Five, card.Clubs}, card.Card{card.OffFive, card.Clubs}},
+				seat.North: &hand.Hand{
+					card.Card{card.Ten, card.Clubs},
+					card.Card{card.Five, card.Diamonds},
+					card.Card{card.Ten, card.Hearts},
+				},
+				seat.East:  &hand.Hand{
+					card.Card{card.Five, card.Clubs},
+					card.Card{card.OffFive, card.Clubs},
+					card.Card{card.Seven, card.Spades},
+				},
 			},
             Trump: card.Clubs,
 		},
 		Message{
-			Type:    ReDeal,
-			Seat:    seat.None,
-			Options: []int{0},
+			Type:    Discard,
+			Seat:    seat.East,
+			Options: []int{2},
+			Expect:  1,
 		},
 		false,
 	},

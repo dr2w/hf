@@ -54,16 +54,17 @@ var dealWithPatternTests = []struct {
 			Dealer: seat.North,
 			Deck:   deck.Deck{c8, c9},
 			Hands: map[seat.Seat]*hand.Hand{
-				seat.North: &hand.Hand{c6, c7},
-				seat.East:  &hand.Hand{c0, c1},
-				seat.South: &hand.Hand{c2, c3},
-				seat.West:  &hand.Hand{c4, c5},
+				seat.North: &hand.Hand{c7, c6},
+				seat.East:  &hand.Hand{c1, c0},
+				seat.South: &hand.Hand{c3, c2},
+				seat.West:  &hand.Hand{c5, c4},
 			},
 		},
 		Message{
 			Type:    Bid,
 			Seat:    seat.East,
 			Options: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+			Expect:  1,
 		},
 		false,
 	},
@@ -72,6 +73,9 @@ var dealWithPatternTests = []struct {
 func TestDealWithPattern(t *testing.T) {
 	for _, test := range dealWithPatternTests {
 		got, req, err := dealWithPattern(test.state, test.cpd, test.dph)
+		if !reflect.DeepEqual(got.Hands, test.want.Hands) {
+			t.Errorf("%s: want hands %v, got %v", test.name, test.want.Hands, got.Hands)
+		}
 		if !reflect.DeepEqual(got, test.want) {
 			t.Errorf("%s: want %v, got %v", test.name, test.want, got)
 		}

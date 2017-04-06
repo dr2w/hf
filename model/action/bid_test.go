@@ -28,25 +28,25 @@ var bidsTests = []struct {
 	{
 		"Pass => Six",
 		state.State{Bids: map[seat.Seat]bid.Bid{seat.North: bid.Pass}},
-		Message{Seat: seat.East, Options: []int{2}}, // B7
+		Message{Seat: seat.East, Options: []int{2}, Expect: 1}, // B7
 		state.State{Bids: map[seat.Seat]bid.Bid{seat.North: bid.Pass, seat.East: bid.B7}},
-		Message{Type: Bid, Seat: seat.South, Options: []int{0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}},
+		Message{Type: Bid, Seat: seat.South, Options: []int{0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, Expect: 1},
 		false,
 	},
 	{
 		"Pass, Eight => Nine",
 		state.State{Bids: map[seat.Seat]bid.Bid{seat.South: bid.Pass, seat.West: bid.B8}},
-		Message{Seat: seat.North, Options: []int{4}}, // B9
+		Message{Seat: seat.North, Options: []int{4}, Expect: 1}, // B9
 		state.State{Bids: map[seat.Seat]bid.Bid{seat.South: bid.Pass, seat.West: bid.B8, seat.North: bid.B9}},
-		Message{Type: Bid, Seat: seat.East, Options: []int{0, 5, 6, 7, 8, 9, 10, 11, 12}},
+		Message{Type: Bid, Seat: seat.East, Options: []int{0, 5, 6, 7, 8, 9, 10, 11, 12}, Expect: 1},
 		false,
 	},
 	{
 		"Pass, Eight, Pass => Ten",
 		state.State{Bids: map[seat.Seat]bid.Bid{seat.South: bid.Pass, seat.West: bid.B8, seat.East: bid.Pass}},
-		Message{Seat: seat.North, Options: []int{5}}, // B10
+		Message{Seat: seat.North, Options: []int{5}, Expect: 1}, // B10
 		state.State{Bids: map[seat.Seat]bid.Bid{seat.South: bid.Pass, seat.West: bid.B8, seat.East: bid.Pass, seat.North: bid.B10}},
-		Message{Type: Trump, Seat: seat.North, Options: []int{0, 1, 2, 3}},
+		Message{Type: Trump, Seat: seat.North, Options: []int{0, 1, 2, 3}, Expect: 1},
 		false,
 	},
 }
@@ -130,6 +130,7 @@ var reqForNextBidTests = []struct {
 			Type:    Bid,
 			Seat:    seat.East,
 			Options: SelectionRange(0, len(bid.Values)),
+			Expect:  1,
 		},
 		false,
 	},
@@ -140,6 +141,7 @@ var reqForNextBidTests = []struct {
 			Type:    Bid,
 			Seat:    seat.North,
 			Options: append([]int{0}, SelectionRange(int(bid.B8), len(bid.Values))...),
+			Expect:  1,
 		},
 		false,
 	},

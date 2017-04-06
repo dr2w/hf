@@ -129,7 +129,7 @@ var nextTests = []struct {
 	{
 		"Empty State",
 		state.State{},
-		Message{Type: Score, Seat: seat.None, Options: []int{0}},
+		Message{Type: Score, Seat: seat.None, Options: []int{0}, Expect: 1},
 		false,
 	},
 	{
@@ -143,6 +143,7 @@ var nextTests = []struct {
 			Type:    Play,
 			Seat:    seat.East,
 			Options: []int{1},
+			Expect:  1,
 		},
 		false,
 	},
@@ -157,6 +158,7 @@ var nextTests = []struct {
 			Type:    Play,
 			Seat:    seat.South,
 			Options: []int{0, 1},
+			Expect:  1,
 		},
 		false,
 	},
@@ -255,7 +257,7 @@ var playTests = []struct {
     {
         "Bad Selection",
         state.State{},
-        Message{Play, seat.North, []int{0,1,2}},
+        Message{Play, seat.North, []int{0,1,2}, 1},
         state.State{},
         Message{},
         true,
@@ -263,7 +265,7 @@ var playTests = []struct {
     {
         "Bad Selection Index",
         state.State{},
-        Message{Play, seat.North, []int{0}},
+        Message{Play, seat.North, []int{0}, 1},
         state.State{},
         Message{},
         true,
@@ -277,7 +279,7 @@ var playTests = []struct {
             },
             Trump: card.Diamonds,
         },
-        Message{Play, seat.North, []int{0}},
+        Message{Play, seat.North, []int{0}, 1},
         state.State{
             Hands: map[seat.Seat]*hand.Hand{
                 seat.North: &hand.Hand{c3c},
@@ -286,7 +288,7 @@ var playTests = []struct {
             Trump: card.Diamonds,
             Played: []trick.Trick{trick.New(c7d)},
         },
-        Message{Play, seat.East, []int{1}},
+        Message{Play, seat.East, []int{1}, 1},
         false,
     },
     {
@@ -304,7 +306,7 @@ var playTests = []struct {
                 trick.New(c7d, c9h),
             },
         },
-        Message{Play, seat.South, []int{1}},
+        Message{Play, seat.South, []int{1}, 1},
         state.State{
             Hands: map[seat.Seat]*hand.Hand{
                 seat.South: &hand.Hand{c7d},
@@ -318,7 +320,7 @@ var playTests = []struct {
                 trick.New(c7d, c9h, c3c, card.Card{}),
             },
         },
-        Message{Play, seat.East, []int{0, 1, 2}},
+        Message{Play, seat.East, []int{0, 1, 2}, 1},
         false,
     },
 }

@@ -24,7 +24,6 @@ func (h *Hand) ExtraCards() int {
 // String returns a human readable string representation of the Hand.
 func (h *Hand) String() string {
 	var s []string
-        card.Set(*h).Sort()
 	for _, card := range *h {
 		s = append(s, card.String())
 	}
