@@ -18,7 +18,7 @@ var (
 	DRWSuit  = suit(fromBidders(drwSuitBid, drwSixBid))
 )
 
-// Value convers a bidder into a decider that returns the
+// Value converts a bidder into a decider that returns the
 // value of the bid (as opposed to the suit)
 func value(f bidder) decider {
 	return func(s state.State, m action.Message) []int {
@@ -105,28 +105,13 @@ func drwSixBid(cards card.Set) bool {
 // bidding logic drw uses as a forSuit function:
 func drwSuitBid(cards card.Set) (min, max bid.Bid) {
 
-	// TODO(drw): Combine this and card_examples into
-	// a few convenience fuctions in card
-	runeMap := map[rune]card.Value{
-		'A': card.Ace,
-		'K': card.King,
-		'Q': card.Queen,
-		'J': card.Jack,
-		'j': card.Joker,
-		'T': card.Ten,
-		'5': card.Five,
-		'f': card.OffFive,
-		'2': card.Deuce,
-	}
-
 	// hasN is a helper function that pattern matches
 	// the hand to help choose a bid.
 	hasN := func(n int, values string) bool {
 		count := 0
-		for _, v := range values {
-			cardVal := runeMap[v]
+		for _, v := range card.ValuesFromShorthand(values) {
 			for _, c := range cards {
-				if c.Value == cardVal {
+				if c.Value == v {
 					count++
 				}
 			}

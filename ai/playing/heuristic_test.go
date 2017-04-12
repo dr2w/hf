@@ -12,6 +12,7 @@ import (
 	"dr2w.com/hf/model/hand"
 	"dr2w.com/hf/model/seat"
 	"dr2w.com/hf/model/state"
+	"dr2w.com/hf/model/trick"
 )
 
 const (
@@ -169,9 +170,10 @@ var evaluateTests = []struct {
 
 func TestEvaluate(t *testing.T) {
 	for _, test := range evaluateTests {
-		got := test.tree.evaluate(test.logic, test.card)
+		got, s := test.tree.evaluate(test.logic, test.card)
 		if got != test.want {
 			t.Errorf("%s: got %f, want %f", test.name, got, test.want)
+			t.Errorf("Tree Trace: %s", s)
 		}
 	}
 }
@@ -220,6 +222,167 @@ func TestNoisily(t *testing.T) {
 		gotStr, wantStr := fmt.Sprintf("%v", got), fmt.Sprintf("%v", test.want)
 		if gotStr != wantStr {
 			t.Errorf("%s: got %s, want %s", test.name, gotStr, wantStr)
+		}
+	}
+}
+
+func makeTrick(first seat.Seat, cards []card.Card) trick.Trick {
+	t := map[seat.Seat]card.Card{}
+	st := first
+	for _, c := range cards {
+		t[st] = c
+		st = st.Next()
+	}
+	return trick.Trick{t, first}
+}
+
+func makeHands(st seat.Seat, cards []card.Card) map[seat.Seat]*hand.Hand {
+	h := hand.Hand(card.Set(cards))
+	return map[seat.Seat]*hand.Hand{
+		st: &h,
+	}
+}
+
+var initialTreeTests = []struct {
+	// Always N, always Clubs trump.
+	name	string
+	// Converts to tricks, last trick can have < 4.
+	// Assigns arbitrarily to seats.
+	out	string
+	// Assumes cards are leading up to N's play
+	trick	string
+	// TODO(drw): Support offsuits in Shorthand
+	hand	string
+	best	int
+}{
+	{
+		"Lead the Ace",
+		"",
+		"",
+		"A852",
+		0,
+	},
+	{
+		"Five on partner's Ace",
+		"",
+		"A7",
+		"K852",
+		2,
+	},
+	{
+		"Deuce on partner's Ace",
+		"",
+		"A7",
+		"KJ832",
+		4,
+	},
+	{
+		"Not the five on opponent's Ace",
+		"",
+		"A",
+		"J5",
+		0,
+	},
+	{
+		"Not a point on opponent's Ace",
+		"",
+		"A",
+		"KJ5432",
+		4,
+	},
+	{
+		"Five on winning hand",
+		"",
+		"897",
+		"AT6532",
+		3,
+	},
+	{
+		"Partner high card out",
+		"AKQJ",
+		"j8",
+		"T96532",
+		3,
+	},
+	{
+		"Offload junk",
+		"",
+		"A",
+		"KJ8532",
+		4,
+	},
+	{
+		"Always try to take the five",
+		"",
+		"f",
+		"AJ832",
+		0,
+	},	
+	{
+		"Be wasteful", // TODO(drw): Fix to not be!
+		"",
+		"f48",
+		"K932",
+		0,
+	},
+}
+
+func handFromShorthand(s string) *hand.Hand {
+	cards := card.CardsFromShorthand(card.Clubs, s)
+	h := hand.Hand(card.Set(cards))
+	return &h
+}
+
+func outFromShorthand(s string) []trick.Trick {
+	tricks := []trick.Trick{}
+	cards := card.CardsFromShorthand(card.Clubs, s)
+	for i := 0; i < len(cards); i += trick.Size {
+		tricks = append(tricks, trick.New(cards[i:i+trick.Size]...))
+	}
+	if trick.Size * len(tricks) < len(cards) {
+		remainder := cards[len(tricks)*trick.Size:]
+		tricks = append(tricks, trick.New(remainder...))
+	}
+	return tricks
+}
+
+func currentFromShorthand(s string) trick.Trick {
+	t := trick.Trick{Cards: map[seat.Seat]card.Card{}}
+	cards := card.CardsFromShorthand(card.Clubs, s)
+	st := seat.West
+	i := len(cards)-1 
+	for i >= 0 && st != seat.North {
+		t.Cards[st] = cards[i]
+		st = st.Previous()
+		i -= 1
+	}
+	return t
+}
+
+func TestBasicTree(t *testing.T) {
+	for _, test := range initialTreeTests {
+		h := handFromShorthand(test.hand)
+		out := outFromShorthand(test.out)
+		current := currentFromShorthand(test.trick)
+		state := state.State{
+			Trump: card.Clubs,
+			Hands: map[seat.Seat]*hand.Hand{seat.North: h},
+			Played: append(out,current),
+		}
+		maxCardIndex := -1
+		maxCardValue := -1.0
+		maxCardTrace := ""
+		for i, c := range *h {
+			v, s := initialTree.evaluate(logic.Logic{state, seat.North}, c)
+			if v > maxCardValue {
+				maxCardValue = v
+				maxCardIndex = i
+				maxCardTrace = s
+			}
+		}
+		if maxCardIndex != test.best {
+			t.Errorf("%s: got %v, want %v", test.name, h.Get(maxCardIndex), h.Get(test.best))
+			t.Errorf("Tree Trace: %s", maxCardTrace)
 		}
 	}
 }

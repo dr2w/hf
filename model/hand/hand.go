@@ -16,6 +16,11 @@ func (h *Hand) MaxSize() int {
 	return 6
 }
 
+// Returns the card at the given position within the hand.
+func (h *Hand) Get(i int) card.Card {
+	return (*h)[i]
+}
+
 // Returns hand length minus max hand size. Can be positive or negative.
 func (h *Hand) ExtraCards() int {
 	return h.Length() - h.MaxSize()

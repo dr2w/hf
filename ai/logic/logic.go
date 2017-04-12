@@ -2,20 +2,26 @@
 // logic/state related functions on top of the state.
 package logic
 
-import "dr2w.com/hf/model/card"
-import "dr2w.com/hf/model/seat"
-import "dr2w.com/hf/model/state"
+import (
+	"dr2w.com/hf/model/card"
+	"dr2w.com/hf/model/seat"
+	"dr2w.com/hf/model/state"
+)
 
-// Logix wraps a state.State from a given Perspective and provides
+// Logic wraps a state.State from a given Perspective and provides
 // several high level logical computations.
 type Logic struct {
 	State       state.State
 	Perspective seat.Seat
 }
 
+// played returns all cards played on *previous* tricks.
 func (l Logic) played() card.Set {
 	s := card.Set{}
 	for _, t := range l.State.Played {
+		if !t.Full() {
+			continue
+		}
 		for _, c := range t.AsCardSet() {
 			s = append(s, c)
 		}
@@ -129,7 +135,7 @@ func (l Logic) PartnerPlayedHighCard() bool {
 
 func (l Logic) PartnerPlayedHighCardOut() bool {
     c, ok := l.State.LastPlayed().Cards[l.Perspective.Partner()]
-    return ok && c == l.TopTrumpOut()
+    return ok && c == l.TopTrumpOut() 
 }
 
 func (l Logic) PartnerToPlay() bool {

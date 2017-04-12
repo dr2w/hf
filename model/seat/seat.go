@@ -15,6 +15,16 @@ func (s Seat) Next() Seat {
 	return None
 }
 
+// Previous returns the previous Seat to take a turn in clockwise order.
+func (s Seat) Previous() Seat {
+	for i, seat := range Order {
+		if seat == s {
+			return Order[(i-1)%len(Order)]
+		}
+	}
+	return None
+}
+
 // Partner returns the partner of this Seat.
 func (s Seat) Partner() Seat {
     return s.Next().Next()

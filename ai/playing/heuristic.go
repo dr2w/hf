@@ -13,13 +13,13 @@ import "dr2w.com/hf/model/card"
 import "dr2w.com/hf/model/state"
 
 var (
-	InconsistentPlayer = inconsistently(0.2, scorerFromDT(basicTree))
-	NoisyPlayer        = noisily(0.2, scorerFromDT(basicTree))
+	InconsistentPlayer = inconsistently(0.2, scorerFromDT(initialTree))
+	NoisyPlayer        = noisily(0.2, scorerFromDT(initialTree))
 )
 
 type scoreFn func(c card.Card, t card.Suit) float64
 
-const scoreMultiplier = 100
+const scoreMultiplier = 10.0
 
 func combine(more, less float64) float64 {
 	return (more*scoreMultiplier + less) / scoreMultiplier
@@ -34,12 +34,15 @@ func byNegValue(c card.Card, t card.Suit) float64 {
 }
 
 func byPoints(c card.Card, t card.Suit) float64 {
-	points := float64(c.Points(t)) / float64(card.MaxPoints)
-	return combine(points, byNegValue(c, t))
+	return float64(c.Points(t)) / float64(card.MaxPoints)
 }
 
 func byNegPoints(c card.Card, t card.Suit) float64 {
     return 1.0 - byPoints(c, t)
+}
+
+func byNegPointsThenNegValue(c card.Card, t card.Suit) float64 {
+	return combine(byNegPoints(c,t), byNegValue(c,t))
 }
 
 func forValuesAbove(v card.Value, f scoreFn) scoreFn {
@@ -51,7 +54,7 @@ func forValuesAbove(v card.Value, f scoreFn) scoreFn {
     }
 }
 
-func byFives(c card.Card, t card.Suit) float64 {
+func byFivesThenNegValue(c card.Card, t card.Suit) float64 {
 	five := 0.0
 	if c.Suit == t && (c.Value == card.Five || c.Value == card.OffFive) {
 		five = 1.0
@@ -59,143 +62,146 @@ func byFives(c card.Card, t card.Suit) float64 {
 	return combine(five, byNegValue(c, t))
 }
 
+var byValueTree = &tree{
+	logic: "ScoreByValue",
+	score: byValue,
+}
+
+var byNegValueTree = &tree{
+	logic: "ScoreByNegValue",
+	score: byNegValue,
+}
+var byFivesThenNegValueTree = &tree{
+	logic: "ScoreByFivesThenNegValue",
+	score: byFivesThenNegValue,
+}
+
+var byNegPointsThenNegValueTree = &tree{
+	logic: "ScoreByNegPoints",
+	score: byNegPointsThenNegValue,
+}
+
 // Basic Logic:
-var basicTree = &tree{
-	// If I'm leading:
+var initialTree = &tree{
+	logic: "If I'm leading",
 	goLeft: logic.Logic.IAmLeading,
+	left: leadingTree,
+	right: notLeadingTree,
+}
+
+var leadingTree = &tree{
+	logic: "If I have the high card",
+	goLeft: logic.Logic.IHaveHighCardOut,
+	left: byValueTree,
+	right: byNegPointsThenNegValueTree,
+}
+
+var notLeadingTree = &tree{
+	logic: "If Offsuit",
+	goLeft: logic.Logic.OffsuitLead,
+	left: offsuitLeadTree,
+	right: trumpLeadTree,
+}
+
+var offsuitLeadTree = &tree{
+	logic: "If I have a 5 and I am last",
+	goLeft: func(l logic.Logic) bool {
+		return l.IHaveAFive() && l.IAmLast()
+	},
+	left: byFivesThenNegValueTree,
+	right: offsuitLeadNoFiveTree,
+}
+
+var trumpLeadTree = &tree{
+	logic: "If there's a 5",
+	goLeft: logic.Logic.TrickHasAFive,
+	left: byValueTree,
+	right: trumpLeadNoFiveTree,
+}
+
+var offsuitLeadNoFiveTree = &tree{
+	logic: "If I am second to last and there's a 5 out I can cover",
+	goLeft: func(l logic.Logic) bool {
+		return l.NextPlayerIsLast() && l.AFiveIsOut() && !l.IHaveAFive() && l.ICanCoverAFive()
+	},
 	left: &tree{
-		// If I have the high card:
-		goLeft: logic.Logic.IHaveHighCardOut,
-		// Score based on value
-		left: &tree{score: byValue},
-		// Else:
-		// Score based on inverse of points
-		right: &tree{score: byNegPoints},
+		logic: "Score inverse of value for value above 5",
+		score: forValuesAbove(card.Five, byNegValue),
 	},
-	// Else:
-	right: &tree{
-		// If Offsuit:
-		goLeft: logic.Logic.OffsuitLead,
-		left: &tree{
-			// If I have a 5 and I am last:
-			goLeft: func(l logic.Logic) bool {
-				return l.IHaveAFive() && l.IAmLast()
-			},
-			// Score the 5!
-			left: &tree{score: byFives},
-			// Else:
-			right: &tree{
-				// If I am second to last and there's a 5 out I can cover:
-				goLeft: func(l logic.Logic) bool {
-                    return l.NextPlayerIsLast() && l.AFiveIsOut() && !l.IHaveAFive() && l.ICanCoverAFive()
-				},
-				left: &tree{
-					// Score inverse of value for value above 5
-					score: forValuesAbove(card.Five, byNegValue),
-				},
-				// Else:
-				right: &tree{
-					// Score inverse of value
-					score: byNegValue,
-				},
-			},
-		},
-		// Else:
-		right: &tree{
-			// If there's a 5:
-			goLeft: logic.Logic.TrickHasAFive,
-			left: &tree{
-				// Score by value
-				score: byValue,
-			},
-			// Else:
-			right: &tree{
-				// If partner played the high card out:
-				goLeft: logic.Logic.PartnerPlayedHighCardOut,
-				left: &tree{
-                    // Score by fives then inverse value
-                    score: byFives,
-				},
-				// Else:
-				right: &tree{
-					// If partner is winning:
-					goLeft: logic.Logic.PartnerPlayedHighCard,
-					left: &tree{
-						// Score by inverse value
-						score: byNegValue,
-					},
-					// Else:
-					right: &tree{
-						// If partner hasn't played yet:
-						goLeft: logic.Logic.PartnerToPlay,
-						left: &tree{
-							// If I have high card out:
-							goLeft: logic.Logic.IHaveHighCardOut,
-							left: &tree{
-								// Score high card
-								score: byValue,
-							},
-							// Else:
-							right: &tree{
-								// If I can take lead:
-								goLeft: logic.Logic.IHaveHighCard,
-								left: &tree{
-									// Score inverse value where I can take lead
-									score: byValue, // TODO(drw)
-								},
-								// Else:
-								right: &tree{
-									// Score inverse points, inverse value
-									score: byNegPoints,
-								},
-							},
-						},
-						// Else:
-						right: &tree{
-							// If there are more than 0 point showing:
-							goLeft: logic.Logic.PointsAreShowing,
-							left: &tree{
-								// If I can take lead:
-								goLeft: logic.Logic.IHaveHighCard,
-								left: &tree{
-									// Score by value on lead
-									score: byValue,
-								},
-								// Else:
-								right: &tree{
-									// Score by inverse value
-									score: byNegValue,
-								},
-							},
-							// Else:
-							right: &tree{
-								// If I am last:
-								goLeft: logic.Logic.IAmLast,
-								left: &tree{
-									// Score by inverse value, points
-									score: byNegPoints,
-								},
-								// Else:
-								right: &tree{
-									// If I can take lead:
-									goLeft: logic.Logic.IHaveHighCard,
-									left: &tree{
-										// Score by value on lead
-										score: byValue,
-									},
-									// Else:
-									right: &tree{
-										// Score by inverse value
-										score: byNegValue,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	right: byNegValueTree,
+}
+
+var trumpLeadNoFiveTree = &tree{
+	logic: "If partner played the high card out",
+	goLeft: logic.Logic.PartnerPlayedHighCardOut,
+	left: byFivesThenNegValueTree,
+	right: partnerNotHighCardOutTree,
+}
+
+var partnerNotHighCardOutTree = &tree{
+	logic: "If partner is winning",
+	goLeft: logic.Logic.PartnerPlayedHighCard,
+	left: partnerHighCardNotHighCardOutTree,
+	right: partnerNotHighCardTree,
+}
+
+var partnerHighCardNotHighCardOutTree = &tree{
+	logic: "If I am last player",
+	goLeft: logic.Logic.IAmLast,
+	left: byFivesThenNegValueTree,
+	right: byNegValueTree,
+}
+
+var partnerNotHighCardTree = &tree{
+	logic: "If partner hasn't played yet",
+	goLeft: logic.Logic.PartnerToPlay,
+	left: partnerToPlayTree,
+	right: parterPlayedNotWinningTree,
+}
+
+var partnerToPlayTree = &tree{
+	logic: "If I have high card out",
+	goLeft: logic.Logic.IHaveHighCardOut,
+	left: byValueTree,
+	right: partnerToPlayIDontHaveHighCardOutTree,
+}
+
+var partnerToPlayIDontHaveHighCardOutTree = &tree{
+	logic: "If I can take lead",
+	goLeft: logic.Logic.IHaveHighCard,
+	left: &tree{
+		logic: "Score inverse value where I can take lead",
+		score: byValue, // TODO(drw)
 	},
+	right: byNegPointsThenNegValueTree,
+}
+
+var parterPlayedNotWinningTree = &tree{
+	logic: "If there are more than 0 point showing",
+	goLeft: logic.Logic.PointsAreShowing,
+	left: pointsShowingParterFailedTree,
+	right: noPointsPartnerFailedTree,
+}
+
+var pointsShowingParterFailedTree = &tree{
+	logic: "If I can take lead",
+	goLeft: logic.Logic.IHaveHighCard,
+	left: byValueTree,
+	right: byNegValueTree,
+}
+
+var noPointsPartnerFailedTree = &tree{
+	logic: "If I am last",
+	goLeft: logic.Logic.IAmLast,
+	left: byNegPointsThenNegValueTree,
+	right: noPointsPartnerFailedImNotLastTree,
+}
+
+var noPointsPartnerFailedImNotLastTree = &tree {
+	logic: "If I can take lead",
+	goLeft: logic.Logic.IHaveHighCard,
+	left: byValueTree,
+	right: byNegValueTree,
 }
 
 type decider func(s state.State, m action.Message) []int
@@ -263,6 +269,7 @@ func noisily(rate float64, score scorer) decider {
 
 // tree provided structure for a basic decision tree.
 type tree struct {
+	logic   string
 	left   *tree
 	right  *tree
 	goLeft func(l logic.Logic) bool
@@ -270,20 +277,23 @@ type tree struct {
 }
 
 // evaluate traverses the decision tree using the given logic and card,
-// returning the score of the leaf we end up at.
-func (t *tree) evaluate(l logic.Logic, c card.Card) float64 {
+// returning the score of the leaf we end up at. Also returns a string
+func (t *tree) evaluate(l logic.Logic, c card.Card) (float64, string) {
 	if t.left == nil && t.right == nil {
-		return t.score(c, l.State.Trump)
+		return t.score(c, l.State.Trump), t.logic
 	}
 	if t.right == nil || t.goLeft(l) {
-		return t.left.evaluate(l, c)
+		value, s := t.left.evaluate(l, c)
+		return value, t.logic + " <Y " + s
 	}
-	return t.right.evaluate(l, c)
+	value, s := t.right.evaluate(l, c)
+	return value, t.logic + " N> " + s
 }
 
 // scorerFromDT builds and returns a scorer from the given decision tree.
 func scorerFromDT(t *tree) scorer {
 	return func(s state.State, m action.Message, c card.Card) float64 {
-		return t.evaluate(logic.Logic{s, m.Seat}, c)
+		value, _ := t.evaluate(logic.Logic{s, m.Seat}, c)
+		return value
 	}
 }

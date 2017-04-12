@@ -70,6 +70,44 @@ var valueNames = map[Value]string{
 	Ace:     "Ac",
 }
 
+var shorthandValues = map[rune]Value{
+	'A': Ace,
+	'K': King,
+	'Q': Queen,
+	'J': Jack,
+	'j': Joker,
+	'T': Ten,
+	'9': Nine,
+	'8': Eight,
+	'7': Seven,
+	'6': Six,
+	'5': Five,
+	'f': OffFive,
+	'4': Four,
+	'3': Three,
+	'2': Deuce,
+}
+
+func ValuesFromShorthand(s string) []Value {
+	values := []Value{}
+	for _, r := range s {
+		if v, ok := shorthandValues[r]; ok {
+			values = append(values, v)
+		} else {
+			return []Value{}
+		}
+	}
+	return values
+}
+
+func CardsFromShorthand(suit Suit, s string) []Card {
+	cards := []Card{}
+	for _, v := range ValuesFromShorthand(s) {
+		cards = append(cards, Card{v, suit})
+	}
+	return cards
+}
+
 var suitNames = map[Suit]string{
 	NoSuit:   "X",
 	Diamonds: "D",
