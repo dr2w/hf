@@ -5,7 +5,7 @@ import (
 
     "dr2w.com/hf/game"
     "dr2w.com/hf/ai"
-    "dr2w.com/hf/player"
+    //"dr2w.com/hf/player"
     "dr2w.com/hf/model/seat"
 )
 
@@ -16,7 +16,8 @@ func main() {
             ai.DRW,
             ai.DRW,
             ai.DRW,
-            player.Stdio{},
+	    ai.DRW,
+            // player.Stdio{},
         )
         err := g.Resolve()
         if err != nil {

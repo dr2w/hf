@@ -3,7 +3,7 @@ package game
 
 import (
     "fmt"
-   // "log"
+    "log"
     "bytes"
     "strings"
 
@@ -50,7 +50,7 @@ func (g *Game) Over() bool {
 
 // Resolve executes the game to an end state.
 func (g *Game) Resolve() error {
-    //log.Printf("Starting Game:\n%s", g)
+    log.Printf("Starting Game:\n%s", g)
     for !g.Over() {
         if err := g.Advance(); err != nil {
             return err

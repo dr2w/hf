@@ -95,6 +95,16 @@ func (s State) String() string {
 	return buffer.String()
 }
 
+func (s State) NextRound(scores map[seat.Seat]int) State {
+    next := Initial(s.Dealer.Next())
+    next.Score = make(map[seat.Seat]int)
+    for st,sc := range s.Score {
+        next.Score[st] = sc + scores[st]
+    }
+    next.Rounds = s.Rounds + 1
+    return next
+}
+
 // Initial returns the starting state for a game of High Five based on the "Dealer" provided.
 func Initial(dealer seat.Seat) State {
 	return State{

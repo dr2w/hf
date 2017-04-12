@@ -32,7 +32,13 @@ func value(f bidder) decider {
 func suit(f bidder) decider {
 	return func(s state.State, m action.Message) []int {
 		_, suit := f(s, m)
-		return []int{int(suit)}
+		for i, st := range card.Suits {
+			if st == suit {
+				return []int{i}
+			}
+		}
+		// else likely no suit, return 0 for now.
+		return []int{0}
 	}
 }
 
@@ -63,7 +69,8 @@ func fromBidders(forSuit forSuit, isSix isSix) func(s state.State, m action.Mess
 		if maxSuit < bid.B8 && currentBid == bid.Pass &&
 			isSix(card.Set(h)) {
 			// TODO(drw): handle the odd case where this wins.
-			return []int{int(bid.B6)}, bestSuit
+			// For now we just pick an arbitrary suit
+			return []int{int(bid.B6)}, card.NoSuit
 		}
 		for b := minSuit; b <= maxSuit; b++ {
 			if b > currentBid {

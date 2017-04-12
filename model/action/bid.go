@@ -25,6 +25,11 @@ func bids(s state.State, m Message) (state.State, Message, error) {
 	s.Bids[m.Seat] = bid.Values[sel]
 
 	if len(s.Bids) == len(seat.Order) {
+		// If everyone passed, we skip playing this round.
+		if _, b := bidWinner(s.Bids); b == bid.Pass {
+    			next := s.NextRound(make(map[seat.Seat]int))
+			return next, Message{Deal, next.Dealer, []int{0}, 1}, nil
+		}
 		return s, reqForChooseSuit(s), nil
 	}
 	req, err := reqForNextBid(s)
@@ -67,7 +72,7 @@ func reqForNextBid(s state.State) (Message, error) {
 }
 
 // reqForChooseSuit takes a state which has all bids completed and
-// returns the corresponding playem Message.
+// returns the corresponding player Message.
 func reqForChooseSuit(s state.State) Message {
 	seat, _ := bidWinner(s.Bids)
 	return Message{

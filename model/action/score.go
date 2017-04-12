@@ -36,11 +36,7 @@ func score(s state.State, m Message) (state.State, Message, error) {
     //fmt.Printf("Points => %v\n", p)
     scores := resolve(bs, b, p)
     //fmt.Printf("Scores => %v\n", scores)
-    next := state.Initial(s.Dealer.Next())
-    next.Score = make(map[seat.Seat]int)
-    for st,sc := range s.Score {
-        next.Score[st] = sc + scores[st]
-    }
-    next.Rounds = s.Rounds + 1
-    return next, Message{Deal, next.Dealer, []int{0}, 1}, nil
+    next := s.NextRound(scores)
+    return next,
+	   Message{Deal, next.Dealer, []int{0}, 1}, nil
 }
